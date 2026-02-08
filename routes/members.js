@@ -1,25 +1,26 @@
 import express from 'express';
 import {
   getMembers,
-  getMember,
+  getMemberById,      // ✅ Nom correct
   createMember,
   updateMember,
-  toggleMemberStatus
+  deleteMember
 } from '../controllers/memberController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.use(protect); // Toutes les routes nécessitent l'auth
+// Toutes les routes nécessitent une authentification
+router.use(protect);
 
+// Routes CRUD
 router.route('/')
-  .get(getMembers)
-  .post(createMember);
+  .get(getMembers)      // GET /api/members
+  .post(createMember);  // POST /api/members
 
 router.route('/:id')
-  .get(getMember)
-  .put(updateMember);
-
-router.patch('/:id/toggle-status', toggleMemberStatus);
+  .get(getMemberById)   // GET /api/members/:id
+  .put(updateMember)    // PUT /api/members/:id
+  .delete(deleteMember); // DELETE /api/members/:id
 
 export default router;
