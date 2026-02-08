@@ -24,56 +24,16 @@ const memberSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    required: [true, 'Le rôle est requis'],
-    enum: [
-      'Chanteur/Chanteuse',
-      'Chef de louange',
-      'Musicien',
-      'Technicien son',
-      'Technicien lumière',
-      'Autre'
-    ],
-    default: 'Chanteur/Chanteuse'
+    trim: true,
+    default: 'Membre'
   },
   instrument: {
     type: String,
-    trim: true,
-    enum: [
-      'Chant lead',
-      '1ère voix',
-      '2ème voix',
-      '3ème voix',
-      'Chorale',
-      'Guitare acoustique',
-      'Guitare électrique',
-      'Basse',
-      'Batterie',
-      'Clavier/Piano',
-      'Synthé',
-      'Saxophone',
-      'Trompette',
-      'Trombone',
-      'Violon',
-      'Djembé',
-      'Percussions',
-      'Sono',
-      'Lumières',
-      'Autre',
-      ''  // Permet de ne rien sélectionner
-    ]
+    trim: true
   },
   groupe: {
     type: String,
-    trim: true,
-    enum: [
-      'Louange principale',
-      'Louange jeunes',
-      'Chorale',
-      'Orchestre',
-      'Équipe technique',
-      'Autre',
-      ''
-    ]
+    trim: true
   },
   status: {
     type: String,
@@ -101,6 +61,6 @@ const memberSchema = new mongoose.Schema({
 // Index pour recherche rapide
 memberSchema.index({ firstName: 1, lastName: 1 });
 memberSchema.index({ status: 1 });
-memberSchema.index({ role: 1 });
+memberSchema.index({ email: 1 });
 
 export default mongoose.model('Member', memberSchema);
