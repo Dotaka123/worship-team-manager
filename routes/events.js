@@ -4,8 +4,7 @@ import {
   getEventById,
   createEvent,
   updateEvent,
-  deleteEvent,
-  confirmParticipation
+  deleteEvent
 } from '../controllers/eventController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -22,7 +21,5 @@ router.route('/:id')
   .get(getEventById)
   .put(updateEvent)
   .delete(deleteEvent);
-
-router.put('/:eventId/confirm/:memberId', confirmParticipation);
 
 export default router;
