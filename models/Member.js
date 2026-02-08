@@ -22,19 +22,57 @@ const memberSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  role: {
+    type: String,
+    required: [true, 'Le rôle est requis'],
+    enum: [
+      'Chanteur/Chanteuse',
+      'Chef de louange',
+      'Musicien',
+      'Technicien son',
+      'Technicien lumière',
+      'Autre'
+    ],
+    default: 'Chanteur/Chanteuse'
+  },
   instrument: {
     type: String,
-    required: [true, 'L\'instrument/rôle est requis'],
+    trim: true,
     enum: [
-      'Chant',
-      'Guitare',
+      'Chant lead',
+      '1ère voix',
+      '2ème voix',
+      '3ème voix',
+      'Chorale',
+      'Guitare acoustique',
+      'Guitare électrique',
       'Basse',
       'Batterie',
-      'Clavier',
+      'Clavier/Piano',
+      'Synthé',
       'Saxophone',
       'Trompette',
+      'Trombone',
       'Violon',
-      'Autre'
+      'Djembé',
+      'Percussions',
+      'Sono',
+      'Lumières',
+      'Autre',
+      ''  // Permet de ne rien sélectionner
+    ]
+  },
+  groupe: {
+    type: String,
+    trim: true,
+    enum: [
+      'Louange principale',
+      'Louange jeunes',
+      'Chorale',
+      'Orchestre',
+      'Équipe technique',
+      'Autre',
+      ''
     ]
   },
   status: {
@@ -44,7 +82,6 @@ const memberSchema = new mongoose.Schema({
   },
   dateEntree: {
     type: Date,
-    required: [true, 'La date d\'entrée est requise'],
     default: Date.now
   },
   notesAccompagnement: {
@@ -64,5 +101,6 @@ const memberSchema = new mongoose.Schema({
 // Index pour recherche rapide
 memberSchema.index({ firstName: 1, lastName: 1 });
 memberSchema.index({ status: 1 });
+memberSchema.index({ role: 1 });
 
 export default mongoose.model('Member', memberSchema);
