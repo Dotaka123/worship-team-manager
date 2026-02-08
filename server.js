@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -7,8 +6,10 @@ import connectDB from './config/db.js';
 // Routes
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
-import attendanceRoutes from './routes/attendance.js';
-import noteRoutes from './routes/notes.js';
+import eventRoutes from './routes/events.js';
+
+// Middleware
+import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
 connectDB();
@@ -22,15 +23,29 @@ app.use(express.json());
 // Routes API
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/notes', noteRoutes);
+app.use('/api/events', eventRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
-  res.json({ message: 'API Worship Team Manager' });
+  res.json({ 
+    message: 'API Worship Team Manager - Version optimisée',
+    version: '2.0'
+  });
 });
+
+// Route de santé (utile pour monitoring)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Middleware de gestion d'erreurs (doit être en dernier)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`✅ Serveur démarré sur le port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
