@@ -13,7 +13,7 @@ export const getAttendanceByDate = async (req, res) => {
     // Récupérer les membres de l'utilisateur
     const members = await Member.find({ 
       createdBy: req.user._id,
-      isActive: true 
+      status: 'actif' 
     });
     const memberIds = members.map(m => m._id);
 
