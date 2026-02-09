@@ -1,4 +1,7 @@
 import Member from '../models/Member.js';
+import Cotisation from '../models/Cotisation.js';
+import Attendance from '../models/Attendance.js';
+import cloudinary from '../config/cloudinary.js';
 
 // Créer un membre
 export const createMember = async (req, res) => {
@@ -71,7 +74,7 @@ export const getAllMembers = async (req, res) => {
   }
 };
 
-// Récupérer un membre
+// Récupérer un membre avec stats
 export const getMember = async (req, res) => {
   try {
     const member = await Member.findOne({
@@ -83,8 +86,67 @@ export const getMember = async (req, res) => {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
-    res.json(member);
+    // Stats cotisations
+    const cotisations = await Cotisation.find({ member: member._id }).sort({ mois: -1 });
+    const cotisationsPaye = cotisations.filter(c => c.statut === 'paye').length;
+    const cotisationsNonPaye = cotisations.filter(c => c.statut === 'non_paye').length;
+
+    // Stats présences
+    const presences = await Attendance.find({ member: member._id });
+    const totalPresent = presences.filter(p => p.status === 'present').length;
+    const totalAbsent = presences.filter(p => p.status === 'absent').length;
+    const totalRetard = presences.filter(p => p.status === 'retard').length;
+    const totalPresences = presences.length;
+    const tauxPresence = totalPresences > 0 
+      ? Math.round((totalPresent / totalPresences) * 100) 
+      : 0;
+
+    // 6 derniers mois cotisations pour chart
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const cotisationsChart = cotisations
+      .filter(c => new Date(c.mois + '-01') >= sixMonthsAgo)
+      .slice(0, 6);
+
+    // Historique présences (10 dernières)
+    const presenceHistory = await Attendance.find({ member: member._id })
+      .sort({ date: -1 })
+      .limit(10)
+      .populate('repetition', 'date type');
+
+    // Jours avant anniversaire
+    let joursAvantAnniversaire = null;
+    if (member.dateOfBirth) {
+      const today = new Date();
+      const birth = new Date(member.dateOfBirth);
+      const nextBirthday = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
+      
+      if (nextBirthday < today) {
+        nextBirthday.setFullYear(today.getFullYear() + 1);
+      }
+      
+      joursAvantAnniversaire = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+    }
+
+    res.json({
+      member,
+      cotisations,
+      presenceHistory,
+      stats: {
+        cotisationsPaye,
+        cotisationsNonPaye,
+        totalCotisations: cotisations.length,
+        cotisationsChart,
+        joursAvantAnniversaire,
+        totalPresent,
+        totalAbsent,
+        totalRetard,
+        totalPresences,
+        tauxPresence
+      }
+    });
   } catch (error) {
+    console.error('❌ getMember error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -162,8 +224,39 @@ export const deleteMember = async (req, res) => {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
+    // Supprimer aussi ses cotisations et présences
+    await Cotisation.deleteMany({ member: req.params.id });
+    await Attendance.deleteMany({ member: req.params.id });
+
     res.json({ message: 'Membre supprimé' });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Upload photo
+export const uploadPhoto = async (req, res) => {
+  try {
+    const member = await Member.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
+
+    if (!member) {
+      return res.status(404).json({ message: 'Membre non trouvé' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'Aucune image fournie' });
+    }
+
+    // L'URL est déjà dans req.file.path grâce à multer-storage-cloudinary
+    member.photo = req.file.path;
+    await member.save();
+
+    res.json({ photo: member.photo });
+  } catch (error) {
+    console.error('❌ uploadPhoto error:', error);
     res.status(500).json({ message: error.message });
   }
 };
