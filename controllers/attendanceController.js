@@ -1,7 +1,6 @@
 import Attendance from '../models/Attendance.js';
 import Member from '../models/Member.js';
 
-// Obtenir les présences par date
 export const getAttendanceByDate = async (req, res) => {
   try {
     const { date } = req.query;
@@ -10,20 +9,17 @@ export const getAttendanceByDate = async (req, res) => {
       return res.status(400).json({ message: 'Date requise' });
     }
 
-    // Récupérer les membres actifs de l'utilisateur
     const members = await Member.find({ 
       createdBy: req.user._id,
       status: 'actif' 
     });
     const memberIds = members.map(m => m._id);
 
-    // Convertir la date correctement
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // Récupérer les présences pour cette date
     const attendance = await Attendance.find({
       member: { $in: memberIds },
       date: { $gte: startOfDay, $lte: endOfDay }
@@ -36,13 +32,11 @@ export const getAttendanceByDate = async (req, res) => {
   }
 };
 
-// Obtenir l'historique d'un membre
 export const getMemberAttendance = async (req, res) => {
   try {
     const { memberId } = req.params;
     const { startDate, endDate } = req.query;
 
-    // Vérifier que le membre appartient à l'utilisateur
     const member = await Member.findOne({
       _id: memberId,
       createdBy: req.user._id
@@ -54,7 +48,6 @@ export const getMemberAttendance = async (req, res) => {
 
     let query = { member: memberId };
 
-    // Filtrer par plage de dates si fournie
     if (startDate && endDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -75,10 +68,9 @@ export const getMemberAttendance = async (req, res) => {
   }
 };
 
-// Marquer présence/absence
 export const markAttendance = async (req, res) => {
   try {
-    const { memberId, date, status, reason } = req.body;
+    const { memberId, date, status, reason, arrivalTime } = req.body;
 
     // Validation
     if (!memberId || !date || !status) {
@@ -87,11 +79,24 @@ export const markAttendance = async (req, res) => {
       });
     }
 
-    // Valider le status
-    const validStatuses = ['present', 'absent', 'excused'];
+    const validStatuses = ['present', 'absent', 'excused', 'en_retard'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         message: `Status doit être: ${validStatuses.join(', ')}` 
+      });
+    }
+
+    // Si absent/excused, le motif est requis
+    if ((status === 'absent' || status === 'excused') && !reason?.trim()) {
+      return res.status(400).json({ 
+        message: 'Un motif est requis pour cette absence' 
+      });
+    }
+
+    // Si en retard, l'heure d'arrivée est recommandée
+    if (status === 'en_retard' && !arrivalTime) {
+      return res.status(400).json({ 
+        message: 'L\'heure d\'arrivée est requise pour les retards' 
       });
     }
 
@@ -105,18 +110,9 @@ export const markAttendance = async (req, res) => {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
-    // Si absent ou excused, le motif est requis
-    if ((status === 'absent' || status === 'excused') && !reason?.trim()) {
-      return res.status(400).json({ 
-        message: 'Un motif est requis pour cette absence' 
-      });
-    }
-
-    // Convertir la date
     const attendanceDate = new Date(date);
     attendanceDate.setHours(12, 0, 0, 0);
 
-    // Créer ou mettre à jour
     const attendance = await Attendance.findOneAndUpdate(
       { 
         member: memberId, 
@@ -124,7 +120,8 @@ export const markAttendance = async (req, res) => {
       },
       { 
         status,
-        reason: status === 'present' ? null : reason?.trim(),
+        reason: (status === 'absent' || status === 'excused') ? reason?.trim() : null,
+        arrivalTime: (status === 'en_retard' || status === 'present') ? arrivalTime : null,
         markedBy: req.user._id 
       },
       { 
