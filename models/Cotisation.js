@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const cotisationSchema = new mongoose.Schema({
   membre: {
@@ -7,7 +7,7 @@ const cotisationSchema = new mongoose.Schema({
     required: true
   },
   mois: {
-    type: String, // Format: "2024-01"
+    type: String,
     required: true
   },
   montant: {
@@ -21,22 +21,15 @@ const cotisationSchema = new mongoose.Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['cash', 'mobile_money', 'bank', 'other'],
-    default: 'cash'
+    enum: ['cash', 'mobile_money', 'bank', null],
+    default: null
   },
   paidAt: {
     type: Date,
     default: null
-  },
-  paidBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
   }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// Index unique pour éviter les doublons
 cotisationSchema.index({ membre: 1, mois: 1 }, { unique: true });
 
-module.exports = mongoose.model('Cotisation', cotisationSchema);
+export default mongoose.model('Cotisation', cotisationSchema);
