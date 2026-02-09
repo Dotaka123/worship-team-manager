@@ -18,24 +18,19 @@ const attendanceSchema = new mongoose.Schema({
   reason: {
     type: String,
     trim: true,
-    // ← Seulement obligatoire si absent ou excused
-    validate: {
-      validator: function(v) {
-        if (this.status === 'absent' || this.status === 'excused') {
-          return v && v.length > 0;
-        }
-        return true;
-      },
-      message: 'Un motif est requis pour les absences'
-    }
+    default: null
+    // ← Pas de validation ici, c'est fait dans le contrôleur
   },
-  createdBy: {
+  markedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true 
+});
 
 // Index unique : un seul enregistrement par membre/date
 attendanceSchema.index({ member: 1, date: 1 }, { unique: true });
+attendanceSchema.index({ date: 1 });
 
 export default mongoose.model('Attendance', attendanceSchema);
