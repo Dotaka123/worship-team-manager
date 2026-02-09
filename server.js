@@ -7,6 +7,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
 import eventRoutes from './routes/events.js';
+import attendanceRoutes from './routes/attendance.js'; // ← AJOUTÉ
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/attendance', attendanceRoutes); // ← AJOUTÉ
 
 // Route de test
 app.get('/', (req, res) => {
@@ -33,15 +35,21 @@ app.get('/', (req, res) => {
   });
 });
 
-// Route de santé (utile pour monitoring)
+// Route de santé
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    services: {
+      auth: 'ok',
+      members: 'ok',
+      events: 'ok',
+      attendance: 'ok' // ← AJOUTÉ
+    }
   });
 });
 
-// Middleware de gestion d'erreurs (doit être en dernier)
+// Middleware de gestion d'erreurs
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
