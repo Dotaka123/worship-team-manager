@@ -91,14 +91,15 @@ export const getMember = async (req, res) => {
     const cotisationsPaye = cotisations.filter(c => c.statut === 'paye').length;
     const cotisationsNonPaye = cotisations.filter(c => c.statut === 'non_paye').length;
 
-    // Stats présences
+    // Stats présences - CORRIGÉ avec les bonnes valeurs
     const presences = await Attendance.find({ member: member._id });
     const totalPresent = presences.filter(p => p.status === 'present').length;
     const totalAbsent = presences.filter(p => p.status === 'absent').length;
-    const totalRetard = presences.filter(p => p.status === 'retard').length;
+    const totalRetard = presences.filter(p => p.status === 'en_retard').length; // ← CORRIGÉ
+    const totalExcused = presences.filter(p => p.status === 'excused').length;
     const totalPresences = presences.length;
     const tauxPresence = totalPresences > 0 
-      ? Math.round((totalPresent / totalPresences) * 100) 
+      ? Math.round(((totalPresent + totalRetard) / totalPresences) * 100) // retards comptent comme présent
       : 0;
 
     // 6 derniers mois cotisations pour chart
@@ -108,11 +109,10 @@ export const getMember = async (req, res) => {
       .filter(c => new Date(c.mois + '-01') >= sixMonthsAgo)
       .slice(0, 6);
 
-    // Historique présences (10 dernières)
+    // Historique présences (10 dernières) - CORRIGÉ sans populate repetition
     const presenceHistory = await Attendance.find({ member: member._id })
       .sort({ date: -1 })
-      .limit(10)
-      .populate('repetition', 'date type');
+      .limit(10);
 
     // Jours avant anniversaire
     let joursAvantAnniversaire = null;
@@ -141,6 +141,7 @@ export const getMember = async (req, res) => {
         totalPresent,
         totalAbsent,
         totalRetard,
+        totalExcused,
         totalPresences,
         tauxPresence
       }
