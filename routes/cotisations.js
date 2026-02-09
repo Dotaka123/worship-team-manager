@@ -1,41 +1,54 @@
-const express = require('express');
-const router = express.Router();
-const Cotisation = require('../models/Cotisation');
-const Member = require('../models/Member');
-const auth = require('../middleware/auth');
+import express from 'express';
+import Cotisation from '../models/Cotisation.js';
+import Member from '../models/Member.js';
+import auth from '../middleware/auth.js';
 
-// Générer les cotisations pour un mois (pour tous les membres actifs)
+const router = express.Router();
+
+// Fonction helper pour générer les cotisations manquantes
+const generateMissingCotisations = async (mois) => {
+  // Cherche tous les membres actifs (insensible à la casse)
+  const activeMembers = await Member.find({
+    status: { $in: ['actif', 'Actif'] }
+  });
+
+  let created = 0;
+
+  for (const member of activeMembers) {
+    // Vérifie si ce membre a déjà une cotisation pour ce mois
+    const existing = await Cotisation.findOne({ 
+      membre: member._id, 
+      mois 
+    });
+
+    if (!existing) {
+      await Cotisation.create({
+        membre: member._id,
+        mois,
+        montant: 3000,
+        statut: 'non_paye'
+      });
+      created++;
+    }
+  }
+
+  return created;
+};
+
+// Générer les cotisations pour un mois
 router.post('/generate', auth, async (req, res) => {
   try {
-    const { mois } = req.body; // Format: "2024-01"
-    
+    const { mois } = req.body;
+
     if (!mois) {
       return res.status(400).json({ message: 'Mois requis' });
     }
 
-    // Récupérer tous les membres actifs
-    const activeMembers = await Member.find({ status: 'actif' });
-    
-    const cotisations = [];
-    
-    for (const member of activeMembers) {
-      // Vérifier si la cotisation existe déjà
-      const existing = await Cotisation.findOne({ membre: member._id, mois });
-      
-      if (!existing) {
-        const cotisation = await Cotisation.create({
-          membre: member._id,
-          mois,
-          montant: 3000,
-          statut: 'non_paye'
-        });
-        cotisations.push(cotisation);
-      }
-    }
+    const created = await generateMissingCotisations(mois);
 
-    res.json({ 
-      message: `${cotisations.length} cotisations générées`,
-      created: cotisations.length 
+    res.json({
+      message: `${created} cotisations générées`,
+      created
     });
   } catch (error) {
     console.error('Erreur génération cotisations:', error);
@@ -48,29 +61,18 @@ router.get('/month/:mois', auth, async (req, res) => {
   try {
     const { mois } = req.params;
 
-    // Générer automatiquement si aucune cotisation n'existe pour ce mois
-    const existing = await Cotisation.find({ mois });
-    
-    if (existing.length === 0) {
-      const activeMembers = await Member.find({ status: 'actif' });
-      
-      for (const member of activeMembers) {
-        await Cotisation.create({
-          membre: member._id,
-          mois,
-          montant: 3000,
-          statut: 'non_paye'
-        });
-      }
-    }
+    // Génère automatiquement les cotisations manquantes
+    await generateMissingCotisations(mois);
 
-    // Récupérer toutes les cotisations du mois avec les infos des membres
+    // Récupère toutes les cotisations du mois
     const cotisations = await Cotisation.find({ mois })
       .populate('membre', 'firstName lastName role instrument status')
       .sort({ 'membre.firstName': 1 });
 
-    // Filtrer seulement les membres actifs
-    const filtered = cotisations.filter(c => c.membre && c.membre.status === 'actif');
+    // Filtre seulement les membres actifs
+    const filtered = cotisations.filter(c => 
+      c.membre && ['actif', 'Actif'].includes(c.membre.status)
+    );
 
     res.json(filtered);
   } catch (error) {
@@ -90,8 +92,7 @@ router.patch('/:id/pay', auth, async (req, res) => {
       {
         statut: 'paye',
         paymentMethod,
-        paidAt: new Date(),
-        paidBy: req.user._id
+        paidAt: new Date()
       },
       { new: true }
     ).populate('membre', 'firstName lastName role instrument');
@@ -107,15 +108,18 @@ router.patch('/:id/pay', auth, async (req, res) => {
   }
 });
 
-// Annuler un paiement (remettre à non payé)
-router.patch('/:id', auth, async (req, res) => {
+// Annuler un paiement
+router.patch('/:id/cancel', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
 
     const cotisation = await Cotisation.findByIdAndUpdate(
       id,
-      updates,
+      {
+        statut: 'non_paye',
+        paymentMethod: null,
+        paidAt: null
+      },
       { new: true }
     ).populate('membre', 'firstName lastName role instrument');
 
@@ -125,7 +129,7 @@ router.patch('/:id', auth, async (req, res) => {
 
     res.json(cotisation);
   } catch (error) {
-    console.error('Erreur mise à jour cotisation:', error);
+    console.error('Erreur annulation cotisation:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 });
@@ -136,11 +140,12 @@ router.get('/stats/:mois', auth, async (req, res) => {
     const { mois } = req.params;
     const year = mois.split('-')[0];
 
-    // Stats du mois
     const cotisationsMois = await Cotisation.find({ mois })
       .populate('membre', 'status');
-    
-    const activeOnly = cotisationsMois.filter(c => c.membre?.status === 'actif');
+
+    const activeOnly = cotisationsMois.filter(c => 
+      c.membre && ['actif', 'Actif'].includes(c.membre.status)
+    );
     const paidThisMonth = activeOnly.filter(c => c.statut === 'paye');
 
     // Stats de l'année
@@ -148,17 +153,19 @@ router.get('/stats/:mois', auth, async (req, res) => {
       mois: { $regex: `^${year}` }
     }).populate('membre', 'status');
 
-    const paidThisYear = cotisationsAnnee.filter(
-      c => c.statut === 'paye' && c.membre?.status === 'actif'
+    const paidThisYear = cotisationsAnnee.filter(c => 
+      c.statut === 'paye' && c.membre && ['actif', 'Actif'].includes(c.membre.status)
     );
 
     const totalCollected = paidThisYear.reduce((sum, c) => sum + c.montant, 0);
+
+    const activeMembers = await Member.countDocuments({ 
+      status: { $in: ['actif', 'Actif'] } 
+    });
     
-    // Calcul du total attendu (membres actifs × 12 mois × montant)
-    const activeMembers = await Member.countDocuments({ status: 'actif' });
     const currentMonth = new Date().getMonth() + 1;
-    const monthsElapsed = mois.startsWith(String(new Date().getFullYear())) 
-      ? currentMonth 
+    const monthsElapsed = mois.startsWith(String(new Date().getFullYear()))
+      ? currentMonth
       : 12;
     const totalExpected = activeMembers * monthsElapsed * 3000;
 
@@ -169,17 +176,10 @@ router.get('/stats/:mois', auth, async (req, res) => {
         unpaid: activeOnly.length - paidThisMonth.length,
         collected: paidThisMonth.reduce((sum, c) => sum + c.montant, 0)
       },
-      year: {
-        totalCollected,
-        totalExpected,
-        percentage: totalExpected > 0 
-          ? Math.round((totalCollected / totalExpected) * 100) 
-          : 0
-      },
       totalCollected,
       totalExpected,
-      percentage: totalExpected > 0 
-        ? Math.round((totalCollected / totalExpected) * 100) 
+      percentage: totalExpected > 0
+        ? Math.round((totalCollected / totalExpected) * 100)
         : 0
     });
   } catch (error) {
@@ -203,4 +203,4 @@ router.get('/member/:memberId', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
