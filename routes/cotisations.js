@@ -1,7 +1,7 @@
 import express from 'express';
 import Cotisation from '../models/Cotisation.js';
 import Member from '../models/Member.js';
-import auth from '../middleware/auth.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
