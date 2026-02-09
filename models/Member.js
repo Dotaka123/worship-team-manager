@@ -36,11 +36,11 @@ const memberSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
-  role: {
-    type: String,
-    enum: ['Chanteur(euse)', 'Musicien', 'Technicien'],  // ← Correspond au formulaire
-    default: 'Musicien'
-  },
+role: {
+  type: String,
+  enum: ['Chanteur', 'Musicien', 'Technicien'],
+  default: 'Musicien'
+},
   instrument: {
     type: String,
     trim: true,
