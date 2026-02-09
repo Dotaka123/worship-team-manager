@@ -11,19 +11,23 @@ const memberSchema = new mongoose.Schema({
     required: [true, 'Le nom est requis'],
     trim: true
   },
+  photo: {
+    type: String,
+    default: null
+  },
   gender: {
-  type: String,
-  enum: ['homme', 'femme'],
-  default: 'homme'
-},
-email: {
-  type: String,
-  trim: true,
-  lowercase: true,
-  sparse: true,
-  unique: true,           
-  default: null
-},
+    type: String,
+    enum: ['homme', 'femme'],
+    default: 'homme'
+  },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    sparse: true,
+    unique: true,           
+    default: null
+  },
   dateOfBirth: {
     type: Date,
     default: null
@@ -42,11 +46,11 @@ email: {
     trim: true,
     default: null
   },
-role: {
-  type: String,
-  enum: ['Chanteur', 'Musicien', 'Technicien'],
-  default: 'Musicien'
-},
+  role: {
+    type: String,
+    enum: ['Chanteur', 'Musicien', 'Technicien'],
+    default: 'Musicien'
+  },
   instrument: {
     type: String,
     trim: true,
@@ -76,7 +80,6 @@ role: {
   timestamps: true 
 });
 
-// Middleware pour calculer l'âge automatiquement
 memberSchema.pre('save', function(next) {
   if (this.dateOfBirth) {
     const today = new Date();
@@ -86,7 +89,6 @@ memberSchema.pre('save', function(next) {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < this.dateOfBirth.getDate())) {
       age--;
     }
-    
     this.age = age;
   }
   next();
