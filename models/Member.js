@@ -15,7 +15,7 @@ const memberSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true,
-    sparse: true, // Permet les valeurs null/vides
+    sparse: true,
     default: null
   },
   dateOfBirth: {
@@ -38,8 +38,8 @@ const memberSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['musician', 'singer', 'director', 'other'],
-    default: 'other'
+    enum: ['Chanteur(euse)', 'Musicien', 'Technicien'],  // ← Correspond au formulaire
+    default: 'Musicien'
   },
   instrument: {
     type: String,
@@ -50,6 +50,16 @@ const memberSchema = new mongoose.Schema({
     type: String,
     enum: ['actif', 'inactif', 'en_pause'],
     default: 'actif'
+  },
+  dateEntree: {
+    type: Date,
+    default: new Date()
+  },
+  notesAccompagnement: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: null
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
