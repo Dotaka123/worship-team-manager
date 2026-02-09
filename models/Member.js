@@ -16,13 +16,14 @@ const memberSchema = new mongoose.Schema({
   enum: ['homme', 'femme'],
   default: 'homme'
 },
-  email: {
-    type: String,
-    trim: true,
-    lowercase: true,
-    sparse: true,
-    default: null
-  },
+email: {
+  type: String,
+  trim: true,
+  lowercase: true,
+  sparse: true,
+  unique: true,           
+  default: null
+},
   dateOfBirth: {
     type: Date,
     default: null
