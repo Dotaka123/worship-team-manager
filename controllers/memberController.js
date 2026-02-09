@@ -1,7 +1,6 @@
 import Member from '../models/Member.js';
 import Cotisation from '../models/Cotisation.js';
 import Attendance from '../models/Attendance.js';
-import cloudinary from '../config/cloudinary.js';
 
 // Créer un membre
 export const createMember = async (req, res) => {
@@ -74,7 +73,7 @@ export const getAllMembers = async (req, res) => {
   }
 };
 
-// Récupérer un membre avec stats
+// Récupérer un membre avec stats complètes
 export const getMember = async (req, res) => {
   try {
     const member = await Member.findOne({
@@ -86,21 +85,10 @@ export const getMember = async (req, res) => {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
-    // Stats cotisations
+    // ============ COTISATIONS ============
     const cotisations = await Cotisation.find({ member: member._id }).sort({ mois: -1 });
     const cotisationsPaye = cotisations.filter(c => c.statut === 'paye').length;
     const cotisationsNonPaye = cotisations.filter(c => c.statut === 'non_paye').length;
-
-    // Stats présences - CORRIGÉ avec les bonnes valeurs
-    const presences = await Attendance.find({ member: member._id });
-    const totalPresent = presences.filter(p => p.status === 'present').length;
-    const totalAbsent = presences.filter(p => p.status === 'absent').length;
-    const totalRetard = presences.filter(p => p.status === 'en_retard').length; // ← CORRIGÉ
-    const totalExcused = presences.filter(p => p.status === 'excused').length;
-    const totalPresences = presences.length;
-    const tauxPresence = totalPresences > 0 
-      ? Math.round(((totalPresent + totalRetard) / totalPresences) * 100) // retards comptent comme présent
-      : 0;
 
     // 6 derniers mois cotisations pour chart
     const sixMonthsAgo = new Date();
@@ -109,12 +97,26 @@ export const getMember = async (req, res) => {
       .filter(c => new Date(c.mois + '-01') >= sixMonthsAgo)
       .slice(0, 6);
 
-    // Historique présences (10 dernières) - CORRIGÉ sans populate repetition
+    // ============ PRÉSENCES ============
+    const presences = await Attendance.find({ member: member._id });
+    
+    const totalPresent = presences.filter(p => p.status === 'present').length;
+    const totalAbsent = presences.filter(p => p.status === 'absent').length;
+    const totalRetard = presences.filter(p => p.status === 'en_retard').length;
+    const totalExcused = presences.filter(p => p.status === 'excused').length;
+    const totalPresences = presences.length;
+    
+    // Taux de présence (présent + retard = considéré comme présent)
+    const tauxPresence = totalPresences > 0 
+      ? Math.round(((totalPresent + totalRetard) / totalPresences) * 100)
+      : 0;
+
+    // Historique des 10 dernières présences
     const presenceHistory = await Attendance.find({ member: member._id })
       .sort({ date: -1 })
       .limit(10);
 
-    // Jours avant anniversaire
+    // ============ ANNIVERSAIRE ============
     let joursAvantAnniversaire = null;
     if (member.dateOfBirth) {
       const today = new Date();
@@ -128,24 +130,29 @@ export const getMember = async (req, res) => {
       joursAvantAnniversaire = Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
     }
 
+    // ============ RÉPONSE ============
     res.json({
       member,
       cotisations,
       presenceHistory,
       stats: {
+        // Cotisations
         cotisationsPaye,
         cotisationsNonPaye,
         totalCotisations: cotisations.length,
         cotisationsChart,
-        joursAvantAnniversaire,
+        // Présences
         totalPresent,
         totalAbsent,
         totalRetard,
         totalExcused,
         totalPresences,
-        tauxPresence
+        tauxPresence,
+        // Anniversaire
+        joursAvantAnniversaire
       }
     });
+
   } catch (error) {
     console.error('❌ getMember error:', error);
     res.status(500).json({ message: error.message });
@@ -251,7 +258,6 @@ export const uploadPhoto = async (req, res) => {
       return res.status(400).json({ message: 'Aucune image fournie' });
     }
 
-    // L'URL est déjà dans req.file.path grâce à multer-storage-cloudinary
     member.photo = req.file.path;
     await member.save();
 
