@@ -29,11 +29,30 @@ const transformMemberData = (data) => {
   return transformed;
 };
 
-// Obtenir tous les membres (avec filtre par statut)
 export const getMembers = async (req, res) => {
   try {
-    const { status } = req.query;
-    const filter = status ? { status } : {};
+    const { status, active, search } = req.query;
+    
+    // Filtre de base : membres de l'utilisateur connecté
+    const filter = { createdBy: req.user.id }; // ← AJOUTÉ
+    
+    // Gestion du filtre de statut
+    if (status) {
+      filter.status = status;
+    } else if (active === 'true') {
+      filter.status = 'actif';  // ← GÉRÉ "active=true"
+    } else if (active === 'false') {
+      filter.status = { $ne: 'actif' };  // tous sauf actifs
+    }
+    
+    // Recherche texte optionnelle
+    if (search) {
+      filter.$or = [
+        { firstName: { $regex: search, $options: 'i' } },
+        { lastName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
     
     const members = await Member.find(filter)
       .sort({ lastName: 1, firstName: 1 });
