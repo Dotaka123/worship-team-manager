@@ -6,7 +6,7 @@ import { protect } from '../middleware/auth.js';
 const router = express.Router();
 
 // POST /api/cotisations/generate
-router.post('/generate', auth, async (req, res) => {
+router.post('/generate', protect, async (req, res) => {
   try {
     const { mois } = req.body;
 
@@ -45,7 +45,7 @@ router.post('/generate', auth, async (req, res) => {
 });
 
 // GET /api/cotisations/month/:mois
-router.get('/month/:mois', auth, async (req, res) => {
+router.get('/month/:mois', protect, async (req, res) => {
   try {
     const { mois } = req.params;
 
@@ -58,13 +58,12 @@ router.get('/month/:mois', auth, async (req, res) => {
 
     res.json(filtered);
   } catch (error) {
-    console.error('Erreur:', error);
     res.status(500).json({ message: error.message });
   }
 });
 
 // PATCH /api/cotisations/:id/pay
-router.patch('/:id/pay', auth, async (req, res) => {
+router.patch('/:id/pay', protect, async (req, res) => {
   try {
     const cotisation = await Cotisation.findByIdAndUpdate(
       req.params.id,
@@ -87,7 +86,7 @@ router.patch('/:id/pay', auth, async (req, res) => {
 });
 
 // PATCH /api/cotisations/:id/cancel
-router.patch('/:id/cancel', auth, async (req, res) => {
+router.patch('/:id/cancel', protect, async (req, res) => {
   try {
     const cotisation = await Cotisation.findByIdAndUpdate(
       req.params.id,
@@ -110,7 +109,7 @@ router.patch('/:id/cancel', auth, async (req, res) => {
 });
 
 // GET /api/cotisations/stats/:mois
-router.get('/stats/:mois', auth, async (req, res) => {
+router.get('/stats/:mois', protect, async (req, res) => {
   try {
     const { mois } = req.params;
     const year = mois.split('-')[0];
@@ -124,7 +123,6 @@ router.get('/stats/:mois', auth, async (req, res) => {
     
     const paidThisMonth = activeOnly.filter(c => c.statut === 'paye');
 
-    // Total année
     const cotisationsAnnee = await Cotisation.find({
       mois: { $regex: `^${year}` },
       statut: 'paye'
@@ -142,7 +140,6 @@ router.get('/stats/:mois', auth, async (req, res) => {
       totalCollected
     });
   } catch (error) {
-    console.error('Erreur stats:', error);
     res.status(500).json({ message: error.message });
   }
 });
