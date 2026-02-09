@@ -13,54 +13,67 @@ const memberSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, 'L\'email est requis'],
-    unique: true,
+    trim: true,
     lowercase: true,
-    trim: true
+    sparse: true, // Permet les valeurs null/vides
+    default: null
+  },
+  dateOfBirth: {
+    type: Date,
+    default: null
+  },
+  age: {
+    type: Number,
+    default: null
+  },
+  residence: {
+    type: String,
+    trim: true,
+    default: null
   },
   phone: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
   role: {
     type: String,
-    trim: true,
-    default: 'Membre'
+    enum: ['musician', 'singer', 'director', 'other'],
+    default: 'other'
   },
   instrument: {
     type: String,
-    trim: true
-  },
-  groupe: {
-    type: String,
-    trim: true
+    trim: true,
+    default: null
   },
   status: {
     type: String,
     enum: ['actif', 'inactif', 'en_pause'],
     default: 'actif'
   },
-  dateEntree: {
-    type: Date,
-    default: Date.now
-  },
-  notesAccompagnement: {
-    type: String,
-    trim: true,
-    maxlength: 500
-  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   }
-}, {
-  timestamps: true
+}, { 
+  timestamps: true 
 });
 
-// Index pour recherche rapide
-memberSchema.index({ firstName: 1, lastName: 1 });
-memberSchema.index({ status: 1 });
-memberSchema.index({ email: 1 });
+// Middleware pour calculer l'âge automatiquement
+memberSchema.pre('save', function(next) {
+  if (this.dateOfBirth) {
+    const today = new Date();
+    let age = today.getFullYear() - this.dateOfBirth.getFullYear();
+    const monthDiff = today.getMonth() - this.dateOfBirth.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < this.dateOfBirth.getDate())) {
+      age--;
+    }
+    
+    this.age = age;
+  }
+  next();
+});
 
 export default mongoose.model('Member', memberSchema);
