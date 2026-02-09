@@ -12,14 +12,17 @@ const attendanceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['present', 'absent', 'excused'],
+    enum: ['present', 'absent', 'excused', 'en_retard'],
     required: true
+  },
+  arrivalTime: {
+    type: String, // Format: "HH:mm"
+    default: null
   },
   reason: {
     type: String,
     trim: true,
     default: null
-    // ← Pas de validation ici, c'est fait dans le contrôleur
   },
   markedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,7 +32,7 @@ const attendanceSchema = new mongoose.Schema({
   timestamps: true 
 });
 
-// Index unique : un seul enregistrement par membre/date
+// Index
 attendanceSchema.index({ member: 1, date: 1 }, { unique: true });
 attendanceSchema.index({ date: 1 });
 
