@@ -24,9 +24,8 @@ const memberSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true,
-    sparse: true,
-    unique: true,           
     default: null
+    // Retirer unique et sparse d'ici
   },
   dateOfBirth: {
     type: Date,
@@ -79,6 +78,12 @@ const memberSchema = new mongoose.Schema({
 }, { 
   timestamps: true 
 });
+
+// Index sparse - ignore les valeurs null
+memberSchema.index(
+  { email: 1 }, 
+  { unique: true, sparse: true, partialFilterExpression: { email: { $type: "string" } } }
+);
 
 memberSchema.pre('save', function(next) {
   if (this.dateOfBirth) {
