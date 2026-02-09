@@ -7,7 +7,8 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import memberRoutes from './routes/members.js';
 import eventRoutes from './routes/events.js';
-import attendanceRoutes from './routes/attendance.js'; // ← AJOUTÉ
+import attendanceRoutes from './routes/attendance.js';
+import cotisationRoutes from './routes/cotisations.js';
 
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
@@ -25,7 +26,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/attendance', attendanceRoutes); // ← AJOUTÉ
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/cotisations', cotisationRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
