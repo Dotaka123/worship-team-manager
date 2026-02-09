@@ -3,10 +3,10 @@ import Member from '../models/Member.js';
 // Créer un membre
 export const createMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, dateOfBirth, residence, phone, role, instrument, status } = req.body;
+    const { firstName, lastName, email, dateOfBirth, residence, phone, role, instrument, status, dateEntree, notesAccompagnement } = req.body;
 
     // Validation
-    if (!firstName || !lastName) {
+    if (!firstName?.trim() || !lastName?.trim()) {
       return res.status(400).json({ 
         message: 'Le prénom et le nom sont requis' 
       });
@@ -15,7 +15,7 @@ export const createMember = async (req, res) => {
     // Vérifier si l'email existe (s'il est fourni)
     if (email) {
       const existingMember = await Member.findOne({ 
-        email,
+        email: email.toLowerCase(),
         createdBy: req.user._id 
       });
       if (existingMember) {
@@ -26,15 +26,17 @@ export const createMember = async (req, res) => {
     }
 
     const member = new Member({
-      firstName,
-      lastName,
-      email: email || null,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email ? email.toLowerCase() : null,
       dateOfBirth: dateOfBirth || null,
       residence: residence || null,
       phone: phone || null,
-      role: role || 'other',
+      role: role || 'Musicien',
       instrument: instrument || null,
       status: status || 'actif',
+      dateEntree: dateEntree || new Date(),
+      notesAccompagnement: notesAccompagnement || null,
       createdBy: req.user._id
     });
 
@@ -79,7 +81,7 @@ export const getMember = async (req, res) => {
 // Mettre à jour un membre
 export const updateMember = async (req, res) => {
   try {
-    const { firstName, lastName, email, dateOfBirth, residence, phone, role, instrument, status } = req.body;
+    const { firstName, lastName, email, dateOfBirth, residence, phone, role, instrument, status, dateEntree, notesAccompagnement } = req.body;
 
     const member = await Member.findOne({
       _id: req.params.id,
@@ -91,9 +93,9 @@ export const updateMember = async (req, res) => {
     }
 
     // Vérifier l'email s'il est modifié
-    if (email && email !== member.email) {
+    if (email && email.toLowerCase() !== member.email) {
       const existingMember = await Member.findOne({ 
-        email,
+        email: email.toLowerCase(),
         createdBy: req.user._id,
         _id: { $ne: req.params.id }
       });
@@ -105,15 +107,17 @@ export const updateMember = async (req, res) => {
     }
 
     // Mise à jour
-    if (firstName) member.firstName = firstName;
-    if (lastName) member.lastName = lastName;
-    if (email !== undefined) member.email = email || null;
-    if (dateOfBirth) member.dateOfBirth = dateOfBirth;
+    if (firstName) member.firstName = firstName.trim();
+    if (lastName) member.lastName = lastName.trim();
+    if (email !== undefined) member.email = email ? email.toLowerCase() : null;
+    if (dateOfBirth !== undefined) member.dateOfBirth = dateOfBirth || null;
     if (residence !== undefined) member.residence = residence || null;
     if (phone !== undefined) member.phone = phone || null;
     if (role) member.role = role;
     if (instrument !== undefined) member.instrument = instrument || null;
     if (status) member.status = status;
+    if (dateEntree) member.dateEntree = dateEntree;
+    if (notesAccompagnement !== undefined) member.notesAccompagnement = notesAccompagnement || null;
 
     await member.save(); // Déclenche le middleware pour l'âge
 
