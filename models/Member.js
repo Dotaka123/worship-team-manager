@@ -82,7 +82,7 @@ const memberSchema = new mongoose.Schema({
 // Index sparse - ignore les valeurs null
 memberSchema.index(
   { email: 1 }, 
-  { unique: true, sparse: true, partialFilterExpression: { email: { $type: "string" } } }
+  { unique: false, sparse: true, partialFilterExpression: { email: { $type: "string" } } }
 );
 
 memberSchema.pre('save', function(next) {
