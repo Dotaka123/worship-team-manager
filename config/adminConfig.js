@@ -13,7 +13,7 @@
 // Liste des emails qui seront automatiquement admins
 export const ADMIN_EMAILS = [
   // Ajoutez vos emails ici
-  'votre.email@exemple.com',
+  'rakotoniainalahatra3@gmail.com',
   // 'admin@worship.com',
   // 'responsable@eglise.com',
 ];
