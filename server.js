@@ -27,6 +27,7 @@ const app = express();
 
 // Connexion à MongoDB
 connectDB();
+app.set('trust proxy', 1);
 
 // Middlewares - CORS configuré pour production
 app.use(cors({
