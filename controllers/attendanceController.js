@@ -1,6 +1,39 @@
 import Attendance from '../models/Attendance.js';
 import Member from '../models/Member.js';
 
+// ✅ Récupérer toutes les présences (avec filtres optionnels)
+export const getAllAttendance = async (req, res) => {
+  try {
+    const { startDate, endDate, limit } = req.query;
+    let query = {};
+
+    // Filtrer par plage de dates si fournie
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const attendanceQuery = Attendance.find(query)
+      .populate('member', 'firstName lastName pseudo email role instrument photo')
+      .sort({ date: -1 });
+
+    // Limiter le nombre de résultats si spécifié
+    if (limit) {
+      attendanceQuery.limit(parseInt(limit));
+    }
+
+    const attendance = await attendanceQuery;
+
+    res.json(attendance);
+  } catch (error) {
+    console.error('❌ getAllAttendance error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Enregistrer une présence
 export const recordAttendance = async (req, res) => {
   try {
