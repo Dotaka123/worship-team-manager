@@ -12,6 +12,7 @@ import attendanceRoutes from './routes/attendance.js';
 import cotisationRoutes from './routes/cotisations.js';
 import noteRoutes from './routes/notes.js';
 import userRoutes from './routes/users.js';
+import statisticsRoutes from './routes/statistics.js';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/cotisations', cotisationRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/statistics', statisticsRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
@@ -65,7 +67,8 @@ app.get('/', (req, res) => {
       attendance: '/api/attendance',
       cotisations: '/api/cotisations',
       notes: '/api/notes',
-      users: '/api/users'
+      users: '/api/users',
+      statistics: '/api/statistics'
     }
   });
 });
