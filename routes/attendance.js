@@ -5,7 +5,8 @@ import {
   getAttendanceByMember,
   updateAttendance,
   deleteAttendance,
-  deleteAttendanceByMemberAndDate
+  deleteAttendanceByMemberAndDate,
+  getAllAttendance
 } from '../controllers/attendanceController.js';
 import { protect, canModify } from '../middleware/auth.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(protect);
 
 // Routes de lecture - accessibles à tous
+router.get('/all', getAllAttendance);
 router.get('/date/:date', getAttendanceByDate);
 router.get('/member/:memberId', getAttendanceByMember);
 
