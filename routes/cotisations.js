@@ -103,7 +103,7 @@ router.post('/generate', canModify, async (req, res) => {
     }
 
     // Récupérer tous les membres actifs
-    const members = await Member.find({ status: 'active' });
+    const members = await Member.find({ status: 'actif' });
     
     if (members.length === 0) {
       return res.status(400).json({ message: 'Aucun membre actif trouvé' });
