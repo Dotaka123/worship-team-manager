@@ -34,7 +34,6 @@ export const recordAttendance = async (req, res) => {
       });
     }
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(memberId);
 
     if (!member) {
@@ -61,7 +60,7 @@ export const recordAttendance = async (req, res) => {
         new: true, 
         runValidators: true 
       }
-    ).populate('member', 'firstName lastName email role instrument');
+    ).populate('member', 'firstName lastName pseudo email role instrument photo');
 
     res.json(attendance);
 
@@ -85,10 +84,9 @@ export const getAttendanceByDate = async (req, res) => {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    // ⬅️ MODIFICATION : Toutes les présences pour tous les membres
     const attendance = await Attendance.find({
       date: { $gte: startOfDay, $lte: endOfDay }
-    }).populate('member', 'firstName lastName email role instrument');
+    }).populate('member', 'firstName lastName pseudo email role instrument photo');
 
     res.json(attendance);
   } catch (error) {
@@ -103,7 +101,6 @@ export const getAttendanceByMember = async (req, res) => {
     const { memberId } = req.params;
     const { startDate, endDate } = req.query;
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(memberId);
 
     if (!member) {
@@ -122,6 +119,7 @@ export const getAttendanceByMember = async (req, res) => {
     }
 
     const attendance = await Attendance.find(query)
+      .populate('member', 'firstName lastName pseudo email role instrument photo')
       .sort({ date: -1 })
       .limit(100);
 
@@ -156,7 +154,7 @@ export const updateAttendance = async (req, res) => {
       id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('member', 'firstName lastName email role instrument');
+    ).populate('member', 'firstName lastName pseudo email role instrument photo');
 
     if (!attendance) {
       return res.status(404).json({ message: 'Présence non trouvée' });

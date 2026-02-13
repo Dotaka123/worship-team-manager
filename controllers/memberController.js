@@ -7,7 +7,8 @@ export const createMember = async (req, res) => {
   try {
     const { 
       firstName, 
-      lastName, 
+      lastName,
+      pseudo,  // ← NOUVEAU
       gender,
       email, 
       dateOfBirth, 
@@ -26,7 +27,22 @@ export const createMember = async (req, res) => {
       });
     }
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy, données partagées
+    if (!pseudo?.trim()) {
+      return res.status(400).json({ 
+        message: 'Le pseudo est requis' 
+      });
+    }
+
+    // Vérifier l'unicité du pseudo
+    const existingPseudo = await Member.findOne({ 
+      pseudo: pseudo.trim().toLowerCase() 
+    });
+    if (existingPseudo) {
+      return res.status(400).json({ 
+        message: 'Ce pseudo est déjà utilisé' 
+      });
+    }
+
     if (email) {
       const existingMember = await Member.findOne({ 
         email: email.toLowerCase()
@@ -41,6 +57,7 @@ export const createMember = async (req, res) => {
     const member = new Member({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      pseudo: pseudo.trim(),  // ← NOUVEAU
       gender: gender || 'homme',
       email: email ? email.toLowerCase() : null,
       dateOfBirth: dateOfBirth || null,
@@ -51,7 +68,7 @@ export const createMember = async (req, res) => {
       status: status || 'actif',
       dateEntree: dateEntree || new Date(),
       notesAccompagnement: notesAccompagnement || null,
-      createdBy: req.user._id  // On garde ça pour traçabilité
+      createdBy: req.user._id
     });
 
     await member.save();
@@ -65,7 +82,6 @@ export const createMember = async (req, res) => {
 // Récupérer tous les membres
 export const getAllMembers = async (req, res) => {
   try {
-    // ⬅️ MODIFICATION : Plus de filtre createdBy - TOUS les membres pour TOUS les utilisateurs
     const members = await Member.find()
       .sort({ createdAt: -1 });
     res.json(members);
@@ -77,7 +93,6 @@ export const getAllMembers = async (req, res) => {
 // Récupérer un membre avec stats complètes
 export const getMember = async (req, res) => {
   try {
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(req.params.id);
 
     if (!member) {
@@ -163,7 +178,8 @@ export const updateMember = async (req, res) => {
   try {
     const { 
       firstName, 
-      lastName, 
+      lastName,
+      pseudo,  // ← NOUVEAU - modifiable
       gender,
       email, 
       dateOfBirth, 
@@ -176,11 +192,24 @@ export const updateMember = async (req, res) => {
       notesAccompagnement 
     } = req.body;
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(req.params.id);
 
     if (!member) {
       return res.status(404).json({ message: 'Membre non trouvé' });
+    }
+
+    // Vérifier l'unicité du pseudo si modifié
+    if (pseudo && pseudo.trim().toLowerCase() !== member.pseudo.toLowerCase()) {
+      const existingPseudo = await Member.findOne({ 
+        pseudo: pseudo.trim().toLowerCase(),
+        _id: { $ne: req.params.id }
+      });
+      if (existingPseudo) {
+        return res.status(400).json({ 
+          message: 'Ce pseudo est déjà utilisé' 
+        });
+      }
+      member.pseudo = pseudo.trim();
     }
 
     if (email && email.toLowerCase() !== member.email) {
@@ -219,7 +248,6 @@ export const updateMember = async (req, res) => {
 // Supprimer un membre
 export const deleteMember = async (req, res) => {
   try {
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findByIdAndDelete(req.params.id);
 
     if (!member) {
@@ -239,7 +267,6 @@ export const deleteMember = async (req, res) => {
 // Upload photo
 export const uploadPhoto = async (req, res) => {
   try {
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(req.params.id);
 
     if (!member) {

@@ -12,7 +12,6 @@ export const createCotisation = async (req, res) => {
       });
     }
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(membre);
     if (!member) {
       return res.status(404).json({ message: 'Membre non trouvé' });
@@ -38,7 +37,7 @@ export const createCotisation = async (req, res) => {
     });
 
     const populated = await Cotisation.findById(cotisation._id)
-      .populate('membre', 'firstName lastName email role');
+      .populate('membre', 'firstName lastName pseudo email role photo');
 
     res.status(201).json(populated);
   } catch (error) {
@@ -57,9 +56,8 @@ export const getAllCotisations = async (req, res) => {
       query.mois = mois;
     }
 
-    // ⬅️ MODIFICATION : Toutes les cotisations pour tous les membres
     const cotisations = await Cotisation.find(query)
-      .populate('membre', 'firstName lastName email role')
+      .populate('membre', 'firstName lastName pseudo email role photo')
       .sort({ mois: -1, createdAt: -1 });
 
     res.json(cotisations);
@@ -72,7 +70,7 @@ export const getAllCotisations = async (req, res) => {
 export const getCotisation = async (req, res) => {
   try {
     const cotisation = await Cotisation.findById(req.params.id)
-      .populate('membre', 'firstName lastName email role phone');
+      .populate('membre', 'firstName lastName pseudo email role phone photo');
 
     if (!cotisation) {
       return res.status(404).json({ message: 'Cotisation non trouvée' });
@@ -100,7 +98,7 @@ export const updateCotisation = async (req, res) => {
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('membre', 'firstName lastName email role');
+    ).populate('membre', 'firstName lastName pseudo email role photo');
 
     if (!cotisation) {
       return res.status(404).json({ message: 'Cotisation non trouvée' });
@@ -132,13 +130,13 @@ export const getCotisationsByMember = async (req, res) => {
   try {
     const { memberId } = req.params;
 
-    // ⬅️ MODIFICATION : Plus de filtre createdBy
     const member = await Member.findById(memberId);
     if (!member) {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
     const cotisations = await Cotisation.find({ membre: memberId })
+      .populate('membre', 'firstName lastName pseudo email role photo')
       .sort({ mois: -1 });
 
     res.json(cotisations);
@@ -152,9 +150,8 @@ export const getRecentPayments = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
 
-    // ⬅️ MODIFICATION : Tous les paiements récents
     const payments = await Cotisation.find({ statut: 'paye' })
-      .populate('membre', 'firstName lastName email')
+      .populate('membre', 'firstName lastName pseudo email photo')
       .sort({ datePaiement: -1 })
       .limit(limit);
 
@@ -174,7 +171,6 @@ export const getMembershipStats = async (req, res) => {
       matchQuery.mois = mois;
     }
 
-    // ⬅️ MODIFICATION : Stats pour toutes les cotisations
     const stats = await Cotisation.aggregate([
       { $match: matchQuery },
       {
