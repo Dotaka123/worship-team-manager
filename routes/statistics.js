@@ -17,6 +17,7 @@ router.get('/global', async (req, res) => {
     // Membres
     const totalMembers = await Member.countDocuments();
     const activeMembers = await Member.countDocuments({ status: 'actif' });
+    const pausedMembers = await Member.countDocuments({ status: 'en_pause' });
     const inactiveMembers = await Member.countDocuments({ status: 'inactif' });
     
     // Cotisations
@@ -65,6 +66,7 @@ router.get('/global', async (req, res) => {
       members: {
         total: totalMembers,
         actifs: activeMembers,
+        en_pause: pausedMembers,
         inactifs: inactiveMembers
       },
       cotisations: {
