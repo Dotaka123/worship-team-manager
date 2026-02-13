@@ -73,6 +73,18 @@ export const recordAttendance = async (req, res) => {
       return res.status(404).json({ message: 'Membre non trouvé' });
     }
 
+    // Empêcher l'enregistrement de présence pour les membres inactifs
+    if (member.status === 'inactif') {
+      return res.status(400).json({ 
+        message: 'Impossible d\'enregistrer une présence pour un membre inactif' 
+      });
+    }
+
+    // Avertissement pour les membres en pause (mais autoriser l'enregistrement)
+    if (member.status === 'en_pause') {
+      console.warn(`⚠️ Enregistrement de présence pour un membre en pause: ${member.pseudo}`);
+    }
+
     const attendanceDate = new Date(date);
     attendanceDate.setHours(12, 0, 0, 0);
 
