@@ -11,6 +11,13 @@ const memberSchema = new mongoose.Schema({
     required: [true, 'Le nom est requis'],
     trim: true
   },
+  pseudo: {
+    type: String,
+    required: [true, 'Le pseudo est requis'],
+    trim: true,
+    unique: true,
+    maxlength: [20, 'Le pseudo ne peut pas dépasser 20 caractères']
+  },
   photo: {
     type: String,
     default: null
@@ -25,7 +32,6 @@ const memberSchema = new mongoose.Schema({
     trim: true,
     lowercase: true,
     default: null
-    // Retirer unique et sparse d'ici
   },
   dateOfBirth: {
     type: Date,
@@ -85,6 +91,16 @@ memberSchema.index(
   { unique: true, sparse: true, partialFilterExpression: { email: { $type: "string" } } }
 );
 
+// Méthode virtuelle pour obtenir le nom complet
+memberSchema.virtual('fullName').get(function() {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+// Méthode virtuelle pour obtenir le nom d'affichage (pseudo prioritaire)
+memberSchema.virtual('displayName').get(function() {
+  return this.pseudo;
+});
+
 memberSchema.pre('save', function(next) {
   if (this.dateOfBirth) {
     const today = new Date();
@@ -98,5 +114,9 @@ memberSchema.pre('save', function(next) {
   }
   next();
 });
+
+// S'assurer que les virtuels sont inclus dans les conversions JSON
+memberSchema.set('toJSON', { virtuals: true });
+memberSchema.set('toObject', { virtuals: true });
 
 export default mongoose.model('Member', memberSchema);

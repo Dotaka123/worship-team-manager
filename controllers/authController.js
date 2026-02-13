@@ -25,16 +25,15 @@ export const register = async (req, res) => {
     }
 
     // Déterminer le rôle par défaut
-    // Si l'email est dans la liste des admins prédéfinis, il devient admin
-    // Sinon, il devient viewer (lecture seule)
     const defaultRole = getDefaultRole(email);
 
-    // Créer l'utilisateur (non vérifié)
+    // Créer l'utilisateur (non vérifié, canEdit = false par défaut)
     const user = await User.create({ 
       name, 
       email, 
       password,
       role: defaultRole,
+      canEdit: false, // Par défaut, personne ne peut modifier
       isEmailVerified: false
     });
 
@@ -46,15 +45,13 @@ export const register = async (req, res) => {
     try {
       await sendVerificationEmail(email, name, verificationToken);
       
-      // Message spécial si l'utilisateur est devenu admin automatiquement
-      const message = defaultRole === 'admin' 
-        ? 'Compte administrateur créé avec succès ! Veuillez vérifier votre email pour activer votre compte.'
-        : 'Compte créé avec succès ! Veuillez vérifier votre email pour activer votre compte.';
+      const message = 'Compte créé avec succès ! Veuillez vérifier votre email pour activer votre compte.';
       
       res.status(201).json({
         message,
         email: user.email,
         role: user.role,
+        canEdit: user.canEdit,
         requiresVerification: true
       });
     } catch (emailError) {
@@ -67,7 +64,7 @@ export const register = async (req, res) => {
   }
 };
 
-// Vérifier l'email - VERSION JSON SIMPLE
+// Vérifier l'email
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
@@ -105,6 +102,7 @@ export const verifyEmail = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      canEdit: user.canEdit,
       token: generateToken(user._id)
     });
   } catch (error) {
@@ -188,6 +186,7 @@ export const login = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      canEdit: user.canEdit, // Inclure canEdit dans la réponse
       token: generateToken(user._id)
     });
   } catch (error) {
@@ -197,5 +196,11 @@ export const login = async (req, res) => {
 
 // Obtenir le profil actuel
 export const getMe = async (req, res) => {
-  res.json(req.user);
+  res.json({
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    canEdit: req.user.canEdit
+  });
 };

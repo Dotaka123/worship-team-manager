@@ -37,7 +37,7 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Middleware pour vérifier si l'utilisateur peut modifier (admin ou responsable)
+// Middleware pour vérifier si l'utilisateur peut modifier
 export const canModify = async (req, res, next) => {
   try {
     if (!req.user) {
@@ -46,9 +46,11 @@ export const canModify = async (req, res, next) => {
       });
     }
 
+    // Vérifier si l'utilisateur a le droit de modifier
     if (!req.user.canModify()) {
       return res.status(403).json({ 
-        message: 'Accès refusé - Vous n\'avez pas les permissions pour modifier ces données. Contactez un administrateur.' 
+        message: 'Vous n\'avez pas l\'autorisation de modifier. Contactez un administrateur.',
+        canEdit: false
       });
     }
 

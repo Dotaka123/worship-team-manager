@@ -1,8 +1,9 @@
 import express from 'express';
 import { 
-  getAllUsers,
-  getUser,
-  updateUserRole,
+  getAllUsers, 
+  getUser, 
+  updateUserRole, 
+  toggleEditPermission,
   deleteUser,
   promoteToAdmin,
   demoteFromAdmin
@@ -11,18 +12,16 @@ import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Toutes les routes nécessitent une authentification ET le rôle admin
+// Toutes les routes nécessitent une authentification
 router.use(protect);
-router.use(adminOnly);
 
-// Gestion des utilisateurs
-router.get('/', getAllUsers);
-router.get('/:id', getUser);
-router.put('/:id/role', updateUserRole);
-router.delete('/:id', deleteUser);
-
-// Routes spéciales pour promouvoir/rétrograder par email
-router.post('/promote', promoteToAdmin);
-router.post('/demote', demoteFromAdmin);
+// Routes réservées aux admins
+router.get('/', adminOnly, getAllUsers);
+router.get('/:id', adminOnly, getUser);
+router.put('/:id/role', adminOnly, updateUserRole);
+router.put('/toggle-edit', adminOnly, toggleEditPermission); // Nouvelle route
+router.delete('/:id', adminOnly, deleteUser);
+router.post('/promote', adminOnly, promoteToAdmin);
+router.post('/demote', adminOnly, demoteFromAdmin);
 
 export default router;

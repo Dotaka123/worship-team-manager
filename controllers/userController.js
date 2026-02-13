@@ -66,7 +66,55 @@ export const updateUserRole = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        canEdit: user.canEdit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Activer/désactiver les permissions de modification (admin seulement)
+export const toggleEditPermission = async (req, res) => {
+  try {
+    const { email, canEdit } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email requis' });
+    }
+    
+    if (typeof canEdit !== 'boolean') {
+      return res.status(400).json({ message: 'canEdit doit être un booléen' });
+    }
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      return res.status(404).json({ 
+        message: `Aucun utilisateur trouvé avec l'email: ${email}` 
+      });
+    }
+    
+    // Empêcher un admin de se retirer lui-même les permissions
+    if (user._id.toString() === req.user._id.toString() && !canEdit) {
+      return res.status(403).json({ 
+        message: 'Vous ne pouvez pas vous retirer vos propres permissions de modification' 
+      });
+    }
+    
+    user.canEdit = canEdit;
+    await user.save();
+    
+    const action = canEdit ? 'accordées' : 'retirées';
+    res.json({
+      message: `Les permissions de modification ont été ${action} à ${user.name}`,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        canEdit: user.canEdit
       }
     });
   } catch (error) {
@@ -132,7 +180,8 @@ export const promoteToAdmin = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        canEdit: user.canEdit
       }
     });
   } catch (error) {
@@ -179,7 +228,8 @@ export const demoteFromAdmin = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        canEdit: user.canEdit
       }
     });
   } catch (error) {

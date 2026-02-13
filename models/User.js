@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema({
     enum: ['viewer', 'responsable', 'admin'],
     default: 'viewer' // Par défaut, les nouveaux utilisateurs sont en lecture seule
   },
+  canEdit: {
+    type: Boolean,
+    default: false // Par défaut, aucun utilisateur ne peut modifier
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
@@ -68,7 +72,8 @@ userSchema.methods.createEmailVerificationToken = function() {
 
 // Méthode pour vérifier si l'utilisateur peut modifier
 userSchema.methods.canModify = function() {
-  return this.role === 'admin' || this.role === 'responsable';
+  // Seuls les utilisateurs avec canEdit=true peuvent modifier
+  return this.canEdit === true;
 };
 
 // Méthode pour vérifier si l'utilisateur est admin
