@@ -72,6 +72,27 @@ router.get('/stats/:mois', async (req, res) => {
   }
 });
 
+// Route pour obtenir l'historique des cotisations d'un membre
+router.get('/member/:memberId/history', async (req, res) => {
+  try {
+    const { memberId } = req.params;
+
+    const member = await Member.findById(memberId);
+    if (!member) {
+      return res.status(404).json({ message: 'Membre non trouvé' });
+    }
+
+    const cotisations = await Cotisation.find({ membre: memberId })
+      .populate('membre', 'firstName lastName pseudo email role photo')
+      .sort({ mois: -1 });
+
+    res.json(cotisations);
+  } catch (error) {
+    console.error('❌ getMemberHistory error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Route pour générer les cotisations pour un mois
 router.post('/generate', canModify, async (req, res) => {
   try {
@@ -103,7 +124,7 @@ router.post('/generate', canModify, async (req, res) => {
       const cotisation = await Cotisation.create({
         membre: member._id,
         mois,
-        montant: 3000, // Montant par défaut
+        montant: 3000,
         statut: 'non_paye',
         createdBy: req.user._id
       });
@@ -135,6 +156,8 @@ router.get('/member/:memberId', getCotisationsByMember);
 // Routes de modification - réservées aux admin et responsables
 router.post('/', canModify, createCotisation);
 router.put('/:id', canModify, updateCotisation);
+
+// Route pour marquer comme payé
 router.patch('/:id/pay', canModify, async (req, res) => {
   try {
     const { methodePaiement, datePaiement } = req.body;
@@ -156,6 +179,30 @@ router.patch('/:id/pay', canModify, async (req, res) => {
     res.json(cotisation);
   } catch (error) {
     console.error('❌ markAsPaid error:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Route pour annuler un paiement
+router.patch('/:id/cancel', canModify, async (req, res) => {
+  try {
+    const cotisation = await Cotisation.findByIdAndUpdate(
+      req.params.id,
+      { 
+        statut: 'non_paye',
+        methodePaiement: null,
+        datePaiement: null
+      },
+      { new: true, runValidators: true }
+    ).populate('membre', 'firstName lastName pseudo email role photo');
+
+    if (!cotisation) {
+      return res.status(404).json({ message: 'Cotisation non trouvée' });
+    }
+
+    res.json(cotisation);
+  } catch (error) {
+    console.error('❌ cancelPayment error:', error);
     res.status(400).json({ message: error.message });
   }
 });
