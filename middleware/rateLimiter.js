@@ -2,11 +2,12 @@ import rateLimit from 'express-rate-limit';
 
 /**
  * Rate limiter général pour toutes les routes API
- * 100 requêtes par 15 minutes par IP
+ * 1000 requêtes par 15 minutes par IP (au lieu de 100)
+ * Plus adapté pour une utilisation normale
  */
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limite de 100 requêtes par fenêtre
+  max: 1000, // Limite de 1000 requêtes par fenêtre (était 100)
   message: {
     message: 'Trop de requêtes depuis cette IP, veuillez réessayer dans 15 minutes.'
   },
@@ -22,11 +23,11 @@ export const generalLimiter = rateLimit({
 
 /**
  * Rate limiter strict pour les tentatives de connexion
- * 5 tentatives par 15 minutes par IP
+ * 10 tentatives par 15 minutes par IP (au lieu de 5)
  */
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limite de 5 tentatives de connexion
+  max: 10, // Limite de 10 tentatives de connexion (était 5)
   message: {
     message: 'Trop de tentatives de connexion. Veuillez réessayer dans 15 minutes.'
   },
@@ -42,11 +43,11 @@ export const loginLimiter = rateLimit({
 
 /**
  * Rate limiter pour l'inscription
- * 3 inscriptions par heure par IP
+ * 10 inscriptions par heure par IP (au lieu de 3)
  */
 export const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 3, // Limite de 3 inscriptions
+  max: 10, // Limite de 10 inscriptions (était 3)
   message: {
     message: 'Trop de tentatives d\'inscription. Veuillez réessayer dans 1 heure.'
   },
@@ -61,11 +62,11 @@ export const registerLimiter = rateLimit({
 
 /**
  * Rate limiter pour la génération de cotisations
- * 10 générations par heure (pour éviter les abus)
+ * 50 générations par heure (au lieu de 10)
  */
 export const generateCotisationsLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 10,
+  max: 50, // Augmenté de 10 à 50
   message: {
     message: 'Trop de générations de cotisations. Veuillez réessayer dans 1 heure.'
   },
@@ -79,11 +80,11 @@ export const generateCotisationsLimiter = rateLimit({
 
 /**
  * Rate limiter pour l'envoi d'emails
- * 20 emails par heure
+ * 100 emails par heure (au lieu de 20)
  */
 export const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 20,
+  max: 100, // Augmenté de 20 à 100
   message: {
     message: 'Trop d\'envois d\'emails. Veuillez réessayer dans 1 heure.'
   }
@@ -91,11 +92,11 @@ export const emailLimiter = rateLimit({
 
 /**
  * Rate limiter pour les exports (PDF/Excel)
- * 30 exports par heure
+ * 100 exports par heure (au lieu de 30)
  */
 export const exportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 30,
+  max: 100, // Augmenté de 30 à 100
   message: {
     message: 'Trop d\'exports. Veuillez réessayer dans 1 heure.'
   }
