@@ -29,9 +29,8 @@ const app = express();
 connectDB();
 app.set('trust proxy', 1);
 
-// Middlewares - CORS configuré pour production
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: true, // Autorise dynamiquement n'importe quelle origine qui fait la requête
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization']
